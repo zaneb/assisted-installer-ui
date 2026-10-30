@@ -21,7 +21,9 @@ import {
   ExternalLink,
   getDisconnectedDocsLink,
   getMajorMinorVersion,
+  singleClusterOperators,
 } from '../../../../../common';
+import { OlmCatalogService } from '../../../../services';
 import { ClusterWizardFooter, ClusterWizardNavigation } from '../../wizardComponents';
 import { useClusterWizardContext } from '../../clusterWizardContext';
 import { DisconnectedOperatorsSummary } from './DisconnectedOperatorsSummary';
@@ -30,6 +32,11 @@ export const DisconnectedReviewStep = () => {
   const { moveBack, disconnectedInfraEnv } = useClusterWizardContext();
   const openshiftVersion = disconnectedInfraEnv?.openshiftVersion;
   const navigate = useNavigate();
+
+  const { includeDefaultOperators, olmOperators } =
+    OlmCatalogService.readSelection(disconnectedInfraEnv);
+  const operatorCount =
+    (includeDefaultOperators ? singleClusterOperators.length : 0) + olmOperators.length;
 
   return (
     <ClusterWizardStep
@@ -66,7 +73,7 @@ export const DisconnectedReviewStep = () => {
               </ListItem>
             </List>
           </Alert>
-          <DisconnectedOperatorsSummary />
+          <DisconnectedOperatorsSummary infraEnv={disconnectedInfraEnv} />
           <DescriptionList isHorizontal>
             <DescriptionListGroup>
               <DescriptionListTerm>OpenShift version</DescriptionListTerm>
@@ -95,8 +102,14 @@ export const DisconnectedReviewStep = () => {
               </DescriptionListDescription>
             </DescriptionListGroup>
             <DescriptionListGroup>
+              <DescriptionListTerm>Operators</DescriptionListTerm>
+              <DescriptionListDescription>{operatorCount}</DescriptionListDescription>
+            </DescriptionListGroup>
+            <DescriptionListGroup>
               <DescriptionListTerm>ISO size</DescriptionListTerm>
-              <DescriptionListDescription>approx. 60+GB</DescriptionListDescription>
+              <DescriptionListDescription>
+                approx. 60+GB, and grows with the selected operators
+              </DescriptionListDescription>
             </DescriptionListGroup>
           </DescriptionList>
         </Grid>

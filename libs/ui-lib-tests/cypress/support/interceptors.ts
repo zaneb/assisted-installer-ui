@@ -478,10 +478,35 @@ const setEntityIds = (activeScenario: string) => {
   Cypress.env('infraEnvId', infraEnvId);
 };
 
+/**
+ * The proposed OLM catalog API does not exist in assisted-service yet, so these intercepts are the
+ * contract. See `docs/api-design/ove-olm-operator-selection.md`.
+ */
+const addOlmCatalogIntercepts = () => {
+  cy.intercept('GET', '/api/assisted-install/v2/olm-catalogs?*', (req) => {
+    req.reply({ body: fixtures.olmCatalogs });
+  }).as('olm-catalogs');
+
+  cy.intercept('GET', '/api/assisted-install/v2/olm-catalogs/*/operators?*', (req) => {
+    req.reply({
+      body: fixtures.getOlmOperatorsResponse({
+        search: req.query['search'] as string,
+        limit: req.query['limit'] ? Number(req.query['limit']) : undefined,
+        offset: req.query['offset'] ? Number(req.query['offset']) : undefined,
+      }),
+    });
+  }).as('olm-operators');
+
+  cy.intercept('GET', '/api/assisted-install/v2/olm-operator-default-group?*', (req) => {
+    req.reply({ body: fixtures.olmOperatorDefaultGroup });
+  }).as('olm-operator-default-group');
+};
+
 const loadCommonIntercepts = () => {
   addPlatformFeatureIntercepts();
   addAdditionalIntercepts();
   addCustomManifestsIntercepts();
+  addOlmCatalogIntercepts();
 };
 
 const loadDay1Intercepts = () => {

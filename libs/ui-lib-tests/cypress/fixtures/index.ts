@@ -12,6 +12,7 @@ export * from './cluster/events';
 export * from './cluster/base-cluster';
 export * from './cluster/default-config';
 export * from './custom-manifests';
+export * from './olm-catalogs';
 export * from './data/dummy-pull-secret';
 export * from './data/ocm-user-account';
 export * from './hosts';

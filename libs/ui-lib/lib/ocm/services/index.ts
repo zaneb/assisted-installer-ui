@@ -8,6 +8,7 @@ export { default as DiskEncryptionService } from './DiskEncryptionService';
 export { default as OperatorsService } from './OperatorsService';
 export { default as NewFeatureSupportLevelsService } from './NewFeatureSupportLevelsService';
 export { default as UISettingService } from './UISettingsService';
+export { default as OlmCatalogService } from './OlmCatalogService';
 
 export * from './CpuArchitectureService';
 export * from './Day2ClusterService';

@@ -15,3 +15,4 @@ export * from './useClusterCustomManifests';
 export * from './useSupportLevelsAPI';
 export * from './useInfraEnvImageUrl';
 export * from './useInfraEnvIpxeImageUrl';
+export * from './useOlmCatalog';

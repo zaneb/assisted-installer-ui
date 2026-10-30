@@ -8,4 +8,5 @@ export {
   InfraEnvsAPI,
   EventsAPI,
   NewFeatureSupportLevelsAPI,
+  OlmCatalogsAPI,
 } from '../../../common/api/assisted-service/index';

@@ -8,3 +8,5 @@ export { default as InfraEnvsAPI } from './InfraEnvsAPI';
 export { default as EventsAPI } from './EventsAPI';
 export { default as NewFeatureSupportLevelsAPI } from './NewFeatureSupportLevelsAPI';
 export { default as UISettingsAPI } from './UISettingsAPI';
+export { default as OlmCatalogsAPI } from './OlmCatalogsAPI';
+export * from './olmCatalogTypes';

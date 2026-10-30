@@ -1,0 +1,76 @@
+#
+# Example host-side unit for the local graphical console.
+#
+# This file is NOT consumed by the container image. It is reference material
+# for whoever owns the rendezvous node's Ignition config (openshift/installer):
+# copy it, substitute the image pullspec, and ship it alongside
+# examples/pam.d/assisted-console as /etc/pam.d/assisted-console.
+#
+# See ../../docs/local-console.md for why each flag is needed.
+#
+[Unit]
+Description=Assisted Installer local graphical console
+Documentation=https://github.com/openshift-assisted/assisted-installer-ui/blob/master/apps/assisted-disconnected-ui/docs/local-console.md
+# plymouth holds DRM master during boot and must be gone first.
+After=systemd-logind.service dbus.service plymouth-quit-wait.service
+Requires=systemd-logind.service dbus.service
+# Nothing to show on a machine with no GPU (serial-only nodes).
+ConditionPathExists=/dev/dri
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=5
+TimeoutStartSec=0
+
+# Give the container a logind session with a seat on VT 7.
+#
+# systemd's setup_pam() pam_putenv()s every Environment= entry below before
+# calling pam_open_session(), then merges pam_getenvlist() -- which contains
+# XDG_SESSION_ID -- back into this unit's environment, so ExecStart= can
+# forward it into the container.
+#
+# VT 7 rather than Anaconda's VT 6: logind's NAutoVTs=6 autospawns gettys on
+# VTs 1-6 and ReserveVT=6 keeps tty6 for one. Anaconda can use 6 because it
+# controls its own logind.conf; we cannot.
+PAMName=assisted-console
+TTYPath=/dev/tty7
+StandardInput=tty-force
+StandardOutput=journal
+StandardError=journal
+TTYReset=yes
+TTYVHangup=yes
+TTYVTDisallocate=yes
+UtmpIdentifier=tty7
+UtmpMode=user
+Environment=XDG_SEAT=seat0
+Environment=XDG_VTNR=7
+Environment=XDG_SESSION_TYPE=wayland
+Environment=XDG_SESSION_CLASS=user
+Environment=XDG_SESSION_DESKTOP=assisted-console
+
+Environment=AIUI_CONSOLE_IMAGE=quay.io/edge-infrastructure/assisted-disconnected-ui:latest
+
+ExecStartPre=-/usr/bin/systemctl stop getty@tty7.service
+ExecStartPre=-/usr/bin/podman rm -f assisted-console
+ExecStartPre=/usr/bin/chvt 7
+ExecStart=/usr/bin/podman run --rm --name assisted-console \
+    --user 0 \
+    --network host \
+    --privileged \
+    --security-opt label=disable \
+    --security-opt seccomp=unconfined \
+    --sdnotify=ignore \
+    --tmpfs /run/user/0:rw,mode=0700,size=256m \
+    --tmpfs /tmp:rw,size=512m \
+    -v /run/systemd:/run/systemd:ro \
+    -v /run/udev:/run/udev:ro \
+    -v /run/dbus/system_bus_socket:/run/dbus/system_bus_socket \
+    -e XDG_SESSION_ID -e XDG_SEAT -e XDG_VTNR -e XDG_SESSION_TYPE \
+    -e AIUI_CONSOLE_URL=http://127.0.0.1:3001/ \
+    --entrypoint /usr/libexec/assisted-disconnected-ui/console/console-entrypoint.sh \
+    ${AIUI_CONSOLE_IMAGE}
+ExecStop=-/usr/bin/podman stop -t 10 assisted-console
+
+[Install]
+WantedBy=multi-user.target

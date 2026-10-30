@@ -1,0 +1,59 @@
+# Development image for iterating on the local graphical console.
+#
+# Containerfile.ocp needs registry.ci.openshift.org credentials and rebuilds
+# the whole UI, which is too slow a loop for working on the kiosk. This builds
+# the same console stack on public CentOS Stream so you can test it on a
+# laptop or a VM.
+#
+# Build context is the repo root, same as Containerfile.ocp. Build the UI and
+# the proxy first:
+#
+#   yarn workspace @openshift-assisted/assisted-disconnected-ui run build
+#   (cd apps/assisted-disconnected-ui/proxy && go build)
+#
+#   podman build -f apps/assisted-disconnected-ui/console/Containerfile.console-dev \
+#       -t assisted-console-dev .
+#
+# Use BASE_IMAGE=quay.io/centos/centos:stream10 to test against gnome-kiosk 49,
+# which is what RHEL 10 ships. stream9 gets you gnome-kiosk 40, which is what
+# RHEL 9 ships -- see docs/local-console.md for why those behave differently.
+
+ARG BASE_IMAGE=quay.io/centos/centos:stream9
+FROM ${BASE_IMAGE}
+
+RUN dnf install -y --setopt=tsflags=nodocs \
+        gnome-kiosk \
+        firefox \
+        mesa-dri-drivers \
+        mesa-libEGL \
+        mesa-libgbm \
+        xkeyboard-config \
+        adwaita-cursor-theme \
+        dejavu-sans-fonts \
+        liberation-fonts \
+        dbus-daemon \
+        dbus-tools \
+        nss-tools \
+        kbd \
+        glibc-langpack-en \
+    && dnf clean all \
+    && rm -rf /var/cache/dnf
+
+COPY apps/assisted-disconnected-ui/console /usr/libexec/assisted-disconnected-ui/console
+RUN set -eux; \
+    chmod 0755 /usr/libexec/assisted-disconnected-ui/console/console-entrypoint.sh; \
+    install -m 0644 \
+        /usr/libexec/assisted-disconnected-ui/console/gsettings/99-assisted-console.gschema.override \
+        /usr/share/glib-2.0/schemas/; \
+    glib-compile-schemas /usr/share/glib-2.0/schemas; \
+    install -D -m 0644 \
+        /usr/libexec/assisted-disconnected-ui/console/firefox/policies.json \
+        /etc/firefox/policies/policies.json; \
+    install -d -m 0700 /run/user/0
+
+COPY apps/assisted-disconnected-ui/build /app/proxy/dist
+COPY apps/assisted-disconnected-ui/proxy/assisted-disconnected-ui /app/proxy/
+
+WORKDIR /app/proxy
+EXPOSE 8080
+CMD ["/usr/libexec/assisted-disconnected-ui/console/console-entrypoint.sh"]

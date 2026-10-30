@@ -1,0 +1,18 @@
+#%PAM-1.0
+#
+# Install on the host as /etc/pam.d/assisted-console.
+#
+# Referenced by assisted-console.service's PAMName=. The only job of this
+# stack is pam_systemd, which registers the logind session and seat that
+# mutter needs in order to take DRM master. It is a copy of Anaconda's
+# /etc/pam.d/anaconda, which exists for exactly the same reason.
+#
+# systemd only runs the account, setcred and session phases, so the auth line
+# is never consulted in practice.
+auth       sufficient  pam_permit.so
+account    sufficient  pam_permit.so
+password   sufficient  pam_permit.so
+session    required    pam_loginuid.so
+-session   optional    pam_keyinit.so revoke
+-session   optional    pam_limits.so
+session    required    pam_systemd.so

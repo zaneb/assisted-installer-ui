@@ -1,0 +1,28 @@
+# GSettings overrides for the local graphical console.
+#
+# Compiled into /usr/share/glib-2.0/schemas at image build time. This is the
+# equivalent of the XDG_DATA_DIRS/XDG_CONFIG_DIRS window-manager overrides
+# Anaconda layers on, but as a compiled override it applies however the
+# compositor is launched.
+
+[org.gnome.desktop.session]
+idle-delay=uint32 0
+
+[org.gnome.desktop.screensaver]
+idle-activation-enabled=false
+lock-enabled=false
+
+[org.gnome.desktop.interface]
+cursor-blink=false
+enable-animations=false
+
+[org.gnome.desktop.wm.preferences]
+audible-bell=false
+action-double-click-titlebar='none'
+
+[org.gnome.desktop.input-sources]
+sources=[('xkb','us')]
+
+[org.gnome.mutter]
+dynamic-workspaces=false
+edge-tiling=false

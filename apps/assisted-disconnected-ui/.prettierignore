@@ -1,1 +1,4 @@
 vendor/
+# A Firefox prefs file, not repo source: it is read by Firefox, and the
+# repo-wide singleQuote rule would make it diverge from every other user.js.
+console/firefox/user.js

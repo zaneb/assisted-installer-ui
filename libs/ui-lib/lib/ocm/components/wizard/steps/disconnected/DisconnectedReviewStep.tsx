@@ -17,17 +17,14 @@ import {
 import {
   ClusterWizardStep,
   PULL_SECRET_INFO_LINK,
-  singleClusterOperators,
   WithErrorBoundary,
-  getOperatorSpecs,
   ExternalLink,
   getDisconnectedDocsLink,
   getMajorMinorVersion,
 } from '../../../../../common';
 import { ClusterWizardFooter, ClusterWizardNavigation } from '../../wizardComponents';
 import { useClusterWizardContext } from '../../clusterWizardContext';
-
-const opSpecs = getOperatorSpecs(() => undefined, true);
+import { DisconnectedOperatorsSummary } from './DisconnectedOperatorsSummary';
 
 export const DisconnectedReviewStep = () => {
   const { moveBack, disconnectedInfraEnv } = useClusterWizardContext();
@@ -69,16 +66,7 @@ export const DisconnectedReviewStep = () => {
               </ListItem>
             </List>
           </Alert>
-          <Alert isInline isExpandable variant="info" title="List of available operators">
-            <List>
-              {singleClusterOperators.map((o) => {
-                const operator = Object.values(opSpecs)
-                  .flatMap((op) => op)
-                  .find((op) => op.operatorKey === o);
-                return <ListItem key={o}>{operator ? operator.title : o}</ListItem>;
-              })}
-            </List>
-          </Alert>
+          <DisconnectedOperatorsSummary />
           <DescriptionList isHorizontal>
             <DescriptionListGroup>
               <DescriptionListTerm>OpenShift version</DescriptionListTerm>

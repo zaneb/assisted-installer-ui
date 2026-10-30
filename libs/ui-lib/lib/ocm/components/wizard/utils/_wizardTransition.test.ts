@@ -13,7 +13,9 @@ import {
   canNextHostDiscovery,
   canNextStorage,
   disconnectedSteps,
+  wizardStepsValidationsMap,
 } from './wizardTransition';
+import { wizardStepNames } from '../constants';
 import { getWizardNavEntries } from '../wizardComponents/ClusterWizardNavigation';
 import { getDisconnectedWizardStepIds } from '../clusterWizardContext/utils';
 import { StaticIpView } from '../steps/staticIp/data';
@@ -474,6 +476,59 @@ describe('Disconnected wizard step ids', () => {
       'disconnected-optional-configurations',
       'disconnected-review',
     ]);
+  });
+
+  test('omits the operators step unless the feature is enabled', () => {
+    expect(getDisconnectedWizardStepIds(undefined, false)).toEqual(disconnectedSteps);
+    expect(getDisconnectedWizardStepIds(StaticIpView.FORM, false)).not.toContain(
+      'disconnected-operators',
+    );
+  });
+
+  test('inserts the operators step immediately before review', () => {
+    expect(getDisconnectedWizardStepIds(undefined, true)).toEqual([
+      'disconnected-basic',
+      'disconnected-optional-configurations',
+      'disconnected-operators',
+      'disconnected-review',
+    ]);
+  });
+
+  test('inserts the operators step exactly once alongside static IP steps', () => {
+    const withStaticIp = getDisconnectedWizardStepIds(StaticIpView.FORM, true);
+    expect(withStaticIp).toEqual([
+      'disconnected-basic',
+      'static-ip-network-wide-configurations',
+      'static-ip-host-configurations',
+      'disconnected-optional-configurations',
+      'disconnected-operators',
+      'disconnected-review',
+    ]);
+    expect(withStaticIp.filter((step) => step === 'disconnected-operators')).toHaveLength(1);
+
+    expect(getDisconnectedWizardStepIds(StaticIpView.YAML, true)).toEqual([
+      'disconnected-basic',
+      'static-ip-yaml-view',
+      'disconnected-optional-configurations',
+      'disconnected-operators',
+      'disconnected-review',
+    ]);
+    expect(getDisconnectedWizardStepIds('dhcp-selected', true)).toEqual([
+      'disconnected-basic',
+      'disconnected-optional-configurations',
+      'disconnected-operators',
+      'disconnected-review',
+    ]);
+  });
+});
+
+describe('Wizard step registration', () => {
+  test('every disconnected step has a name and a validations map entry', () => {
+    const stepIds = getDisconnectedWizardStepIds(undefined, true);
+    stepIds.forEach((stepId) => {
+      expect(wizardStepNames[stepId]).toBeTruthy();
+      expect(wizardStepsValidationsMap[stepId]).toBeDefined();
+    });
   });
 });
 

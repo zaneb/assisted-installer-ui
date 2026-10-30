@@ -7,6 +7,7 @@ import {
   ClusterDetails,
   BasicStep,
   OptionalConfigurationsStep,
+  DisconnectedOperatorsStep,
   DisconnectedReviewStep,
   DisconnectedStaticIp,
 } from './steps';
@@ -19,6 +20,8 @@ const getCurrentStep = (currentStepId: ClusterWizardStepsType, infraEnv?: InfraE
       return <DisconnectedReviewStep />;
     case 'disconnected-optional-configurations':
       return <OptionalConfigurationsStep />;
+    case 'disconnected-operators':
+      return <DisconnectedOperatorsStep />;
     case 'disconnected-basic':
       return <BasicStep />;
     case 'static-ip-yaml-view':

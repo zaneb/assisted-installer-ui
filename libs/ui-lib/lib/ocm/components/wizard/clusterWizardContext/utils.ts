@@ -38,10 +38,17 @@ export const getWizardStepIds = (
 
 export const getDisconnectedWizardStepIds = (
   staticIpView?: StaticIpView | 'dhcp-selected',
+  isOveOperatorsEnabled = false,
 ): ClusterWizardStepsType[] => {
   // Always rebuild from the base disconnected steps so toggling static IP / DHCP
   // cannot leave leftover sub-steps in the list.
-  const copy = [...disconnectedSteps];
+  let copy = [...disconnectedSteps];
+
+  if (isOveOperatorsEnabled) {
+    copy = addStepToClusterWizard(copy, 'disconnected-optional-configurations', [
+      'disconnected-operators',
+    ]);
+  }
 
   if (staticIpView === StaticIpView.YAML) {
     return addStepToClusterWizard(copy, 'disconnected-basic', ['static-ip-yaml-view']);

@@ -1,4 +1,8 @@
-export type AssistedInstallerFeatureType = 'ASSISTED_INSTALLER_SINGLE_CLUSTER_FEATURE';
+export type AssistedInstallerFeatureType =
+  | 'ASSISTED_INSTALLER_SINGLE_CLUSTER_FEATURE'
+  // Operator selection for the OVE disconnected ISO. Off until the assisted-service catalog
+  // endpoints exist — see docs/api-design/ove-olm-operator-selection.md.
+  | 'ASSISTED_INSTALLER_OVE_OPERATORS_FEATURE';
 
 export type FeatureListType = {
   [key in AssistedInstallerFeatureType]?: boolean;
@@ -16,4 +20,5 @@ export type AssistedInstallerPermissionTypesListType = {
 // Hardcoded outside OCM
 export const STANDALONE_DEPLOYMENT_ENABLED_FEATURES: FeatureListType = {
   ASSISTED_INSTALLER_SINGLE_CLUSTER_FEATURE: false,
+  ASSISTED_INSTALLER_OVE_OPERATORS_FEATURE: false,
 };

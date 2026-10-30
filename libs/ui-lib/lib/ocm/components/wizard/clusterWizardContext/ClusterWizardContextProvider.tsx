@@ -17,7 +17,6 @@ import { getStaticIpInfo } from '../steps/staticIp/data/fromInfraEnv';
 import {
   ClusterWizardStepsType,
   ClusterWizardFlowStateType,
-  disconnectedSteps,
   getClusterWizardFirstStep,
   isStepAfter,
   isStaticIpStep,
@@ -36,14 +35,16 @@ export const ClusterWizardContextProvider = ({
   permissions?: AssistedInstallerOCMPermissionTypesListType;
 }>) => {
   const isSingleClusterFeatureEnabled = useFeature('ASSISTED_INSTALLER_SINGLE_CLUSTER_FEATURE');
+  const isOveOperatorsEnabled = useFeature('ASSISTED_INSTALLER_OVE_OPERATORS_FEATURE');
   const [currentStepId, setCurrentStepId] = React.useState<ClusterWizardStepsType>();
   const [connectedWizardStepIds, setWizardStepIds] = React.useState<ClusterWizardStepsType[]>();
   const [wizardPerPage, setWizardPerPage] = React.useState(10);
   const [installDisconnected, setInstallDisconnected] = React.useState(false);
   const [disconnectedCluster, setDisconnectedCluster] = React.useState<Cluster | undefined>();
   const [disconnectedInfraEnv, setDisconnectedInfraEnv] = React.useState<InfraEnv | undefined>();
-  const [disconnectedWizardStepIds, setDisconnectedWizardStepIds] =
-    React.useState<ClusterWizardStepsType[]>(disconnectedSteps);
+  const [disconnectedWizardStepIds, setDisconnectedWizardStepIds] = React.useState<
+    ClusterWizardStepsType[]
+  >(() => getDisconnectedWizardStepIds(undefined, isOveOperatorsEnabled));
   const location = useLocation();
   const locationState = location.state as ClusterWizardFlowStateType | undefined;
   const {
@@ -118,7 +119,9 @@ export const ClusterWizardContextProvider = ({
         if (!staticIpInfo) {
           throw `Wizard step is currently ${currentStepId}, but no static ip info is defined`;
         }
-        setDisconnectedWizardStepIds(getDisconnectedWizardStepIds(staticIpInfo.view));
+        setDisconnectedWizardStepIds(
+          getDisconnectedWizardStepIds(staticIpInfo.view, isOveOperatorsEnabled),
+        );
       } else {
         const staticIpInfo = infraEnv ? getStaticIpInfo(infraEnv) : undefined;
         if (!staticIpInfo) {
@@ -159,7 +162,7 @@ export const ClusterWizardContextProvider = ({
           setCurrentStepId('static-ip-network-wide-configurations');
         }
         if (installDisconnected) {
-          setDisconnectedWizardStepIds(getDisconnectedWizardStepIds(view));
+          setDisconnectedWizardStepIds(getDisconnectedWizardStepIds(view, isOveOperatorsEnabled));
         } else {
           setWizardStepIds(getWizardStepIds(view, isSingleClusterFeatureEnabled));
         }
@@ -171,9 +174,11 @@ export const ClusterWizardContextProvider = ({
               ? getStaticIpInfo(disconnectedInfraEnv)
               : undefined;
             const view = staticIpInfo?.view ?? StaticIpView.FORM;
-            setDisconnectedWizardStepIds(getDisconnectedWizardStepIds(view));
+            setDisconnectedWizardStepIds(getDisconnectedWizardStepIds(view, isOveOperatorsEnabled));
           } else {
-            setDisconnectedWizardStepIds(getDisconnectedWizardStepIds('dhcp-selected'));
+            setDisconnectedWizardStepIds(
+              getDisconnectedWizardStepIds('dhcp-selected', isOveOperatorsEnabled),
+            );
           }
         } else {
           if (type === HostsNetworkConfigurationType.STATIC) {
@@ -196,8 +201,9 @@ export const ClusterWizardContextProvider = ({
       setInstallDisconnected: (enabled: boolean) => {
         setInstallDisconnected(enabled);
         if (enabled) {
-          setDisconnectedWizardStepIds(disconnectedSteps);
-          onSetCurrentStepId(disconnectedSteps[0]);
+          const stepIds = getDisconnectedWizardStepIds(undefined, isOveOperatorsEnabled);
+          setDisconnectedWizardStepIds(stepIds);
+          onSetCurrentStepId(stepIds[0]);
         } else {
           connectedWizardStepIds?.length && onSetCurrentStepId(connectedWizardStepIds[0]);
         }
@@ -213,6 +219,7 @@ export const ClusterWizardContextProvider = ({
     infraEnv,
     wizardPerPage,
     isSingleClusterFeatureEnabled,
+    isOveOperatorsEnabled,
     clearAlerts,
     uiSettings,
     updateUISettings,

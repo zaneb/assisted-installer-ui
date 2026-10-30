@@ -38,6 +38,54 @@ FROM registry.ci.openshift.org/ocp/5.0:base-rhel9
 
 LABEL io.openshift.release.operator=true
 
+USER 0
+
+# Local graphical console ("kiosk") support.
+#
+# gnome-kiosk is a minimal mutter-based Wayland compositor that renders
+# straight to DRM/KMS; firefox is the only browser packaged in RHEL that can
+# run on it. These are used only by console/console-entrypoint.sh, which a
+# caller selects with `podman run --entrypoint`; the default CMD below does
+# not depend on any of them. See console/README.md.
+#
+# Requires rhel-9-appstream-rpms to be listed under enabled_repos: for this
+# image in openshift-eng/ocp-build-data, otherwise the build cannot see these
+# packages at all.
+#
+# The langpacks are removed because the UI is English-only (src/i18n.ts pins
+# supportedLngs to ['en']) and PatternFly self-hosts its webfonts, so Firefox's
+# 114 bundled langpacks are 43MB of dead weight in a release payload image.
+RUN dnf install -y --setopt=tsflags=nodocs \
+        gnome-kiosk \
+        firefox \
+        mesa-dri-drivers \
+        mesa-libEGL \
+        mesa-libgbm \
+        xkeyboard-config \
+        adwaita-cursor-theme \
+        dejavu-sans-fonts \
+        liberation-fonts \
+        dbus-daemon \
+        dbus-tools \
+        nss-tools \
+        kbd \
+        glibc-langpack-en \
+    && dnf clean all \
+    && rm -rf /var/cache/dnf /var/cache/yum /var/log/dnf* \
+    && rm -f /usr/lib64/firefox/browser/extensions/langpack-*.xpi
+
+COPY apps/assisted-disconnected-ui/console /usr/libexec/assisted-disconnected-ui/console
+RUN set -eux; \
+    chmod 0755 /usr/libexec/assisted-disconnected-ui/console/console-entrypoint.sh; \
+    install -m 0644 \
+        /usr/libexec/assisted-disconnected-ui/console/gsettings/99-assisted-console.gschema.override \
+        /usr/share/glib-2.0/schemas/; \
+    glib-compile-schemas /usr/share/glib-2.0/schemas; \
+    install -D -m 0644 \
+        /usr/libexec/assisted-disconnected-ui/console/firefox/policies.json \
+        /etc/firefox/policies/policies.json; \
+    install -d -m 0700 /run/user/0
+
 COPY --from=ui-build /app/apps/assisted-disconnected-ui/build /app/proxy/dist
 COPY --from=proxy-build /app/assisted-disconnected-ui /app/proxy
 WORKDIR /app/proxy
